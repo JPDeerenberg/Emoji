@@ -2,9 +2,11 @@
   "name": "Emoji Quest",
   "short_name": "Emoji Quest",
   "description": "Gebruik alle smiley-emojis en klok ze af.",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone"],
   "background_color": "#fffaf0",
   "theme_color": "#ff7a3d",
   "icons": [

@@ -58,12 +58,16 @@ button.ghost{background:transparent;color:var(--mute);border:1px solid var(--lin
     <div>
       <b>Opdracht van vandaag</b>
       <p id="qt">Stuur deze emoji naar iemand.</p>
-      <div class="btns"><button id="qdone">Gebruikt!</button><button class="ghost" id="qnew">Andere</button></div>
+      <div class="btns"><button id="qcopy">Kopieer</button><button id="qdone">Gebruikt!</button><button class="ghost" id="qnew">Andere</button></div>
     </div>
   </div>
 
   <div class="msg" id="msg"></div>
 
+  <div class="tabs" id="mode">
+    <button data-m="check" class="on">Tik = afvinken</button>
+    <button data-m="copy">Tik = kopiëren</button>
+  </div>
   <div class="tabs" id="tabs">
     <button data-f="all" class="on">Alles</button>
     <button data-f="todo">Nog te doen</button>
@@ -82,7 +86,7 @@ button.ghost{background:transparent;color:var(--mute);border:1px solid var(--lin
 <script>
 const ALL = "😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 🫠 😉 😊 😇 🥰 😍 🤩 😘 😗 ☺️ 😚 😙 🥲 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🫢 🫣 🤫 🤔 🫡 🤐 🤨 😐 😑 😶 🫥 😏 😒 🙄 😬 🤥 😌 😔 😪 🤤 😴 😷 🤒 🤕 🤢 🤮 🤧 🥵 🥶 🥴 😵 🤯 🤠 🥳 🥸 😎 🤓 🧐 😕 🫤 😟 🙁 ☹️ 😮 😯 😲 😳 🥺 🥹 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬 😈 👿 💀 ☠️ 💩 🤡 👹 👺 👻 👽 👾 🤖 😺 😸 😹 😻 😼 😽 🙀 😿 😾".split(" ");
 const RANKS = [[0,"Beginner"],[5,"Emoji-leerling"],[15,"Smiley-fan"],[30,"Gezichtenkenner"],[50,"Emoji-held"],[75,"Emoji-meester"],[100,"Legende"]];
-let used = new Set(), filter = "all", quest = null;
+let used = new Set(), filter = "all", quest = null, mode = "check";
 
 function load(){
   try{
@@ -124,16 +128,32 @@ function render(){
   if(quest && used.has(quest)) newQuest();
   $("qe").textContent = quest || "🏆";
   $("qt").textContent = quest ? "Gebruik deze emoji vandaag in een bericht." : "Alles verzameld, geweldig!";
-  $("qdone").style.display = $("qnew").style.display = quest ? "" : "none";
+  $("qdone").style.display = $("qnew").style.display = $("qcopy").style.display = quest ? "" : "none";
   const g = $("grid"); g.innerHTML = "";
   ALL.filter(e => filter==="all" || (filter==="done") === used.has(e)).forEach(e=>{
     const b = document.createElement("button");
     b.className = "e" + (used.has(e) ? " done" : "");
     b.textContent = e;
-    b.onclick = () => toggle(e, b);
+    b.onclick = () => mode==="copy" ? copy(e) : toggle(e, b);
     g.appendChild(b);
   });
 }
+async function copy(e){
+  let ok = false;
+  try{ await navigator.clipboard.writeText(e); ok = true; }catch(_){
+    try{
+      const t = document.createElement("textarea"); t.value = e; t.style.position = "fixed"; t.style.opacity = "0";
+      document.body.appendChild(t); t.select(); ok = document.execCommand("copy"); t.remove();
+    }catch(_){}
+  }
+  $("msg").textContent = ok ? `Gekopieerd ${e} Plak hem in je app.` : "Kopiëren lukte niet.";
+}
+$("qcopy").onclick = () => quest && copy(quest);
+$("mode").onclick = ev => {
+  const m = ev.target.dataset.m; if(!m) return;
+  mode = m;
+  [...$("mode").children].forEach(b => b.classList.toggle("on", b.dataset.m===m));
+};
 $("qdone").onclick = () => quest && toggle(quest);
 $("qnew").onclick = () => { newQuest(); save(); render(); };
 $("reset").onclick = () => { if(confirm("Alles op nul zetten?")){ used = new Set(); newQuest(); $("msg").textContent=""; save(); render(); } };
